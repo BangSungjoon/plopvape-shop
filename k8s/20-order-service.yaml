@@ -71,7 +71,7 @@ spec:
             - name: OTEL_SERVICE_NAME
               value: "plopvape-order"
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: "lucida.organizationId=69731678b56620b247fb279a,lucida.groupId=RCA-Testbed"
+              value: "lucida.organizationId=69731678b56620b247fb279a,lucida.groupId=plopvape-shop"
             - name: OTEL_TRACES_EXPORTER
               value: "otlp"
             - name: OTEL_METRICS_EXPORTER
