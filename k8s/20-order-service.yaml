@@ -22,12 +22,21 @@ spec:
       labels:
         app: testbed-order         # 찍어낸 Pod에 붙일 라벨 (selector와 일치해야!)
     spec:
+      volumes:
+        - name: apm-agent
+          hostPath:
+            path: /home/nkia/apm-agent
+            type: Directory
       containers:                  # 이 Pod 안에 들어갈 컨테이너 목록
         - name: order-service      # 컨테이너 이름 (자유롭게 지정)
           image: plopvape-order:latest   # 어떤 Docker 이미지를 쓸지
           imagePullPolicy: Never         # 로컬 이미지 사용 (인터넷에서 안 받음)
           ports:
             - containerPort: 8080        # 이 컨테이너가 듣는 포트
+          volumeMounts:
+            - name: apm-agent
+              mountPath: /opt/apm
+              readOnly: true
 
           # --- 환경변수 주입 ---
           # envFrom: ConfigMap/Secret의 모든 키-값을 한꺼번에 환경변수로 넣음
@@ -52,19 +61,38 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
+            # --- APM Java Agent ---
+            - name: JAVA_TOOL_OPTIONS
+              value: "-javaagent:/opt/apm/opentelemetry-javaagent.jar"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://192.168.230.104:6565"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_SERVICE_NAME
+              value: "plopvape-order"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "lucida.organizationId=69731678b56620b247fb279a,lucida.groupId=RCA-Testbed"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_METRICS_EXPORTER
+              value: "otlp"
+            - name: OTEL_LOGS_EXPORTER
+              value: "otlp"
+            - name: OTEL_METRIC_EXPORT_INTERVAL
+              value: "10000"
 
           # --- 헬스체크 (Probe) ---
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 30      # Spring Boot 시작이 느리므로 30초 대기
+            initialDelaySeconds: 60      # APM agent 로딩 대비 (기존 30)
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 60
+            initialDelaySeconds: 90      # APM agent 로딩 대비 (기존 60)
             periodSeconds: 15
 
           # --- 리소스 제한 ---
