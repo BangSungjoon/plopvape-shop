@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testbed-notification
+  namespace: rca-testbed
+  labels:
+    app: testbed-notification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testbed-notification
+  template:
+    metadata:
+      labels:
+        app: testbed-notification
+    spec:
+      containers:
+        - name: notification-service
+          image: plopvape-notification:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: service-config
+            - secretRef:
+                name: postgres-secret
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 200m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: testbed-notification
+  namespace: rca-testbed
+spec:
+  selector:
+    app: testbed-notification
+  ports:
+    - port: 8084
+      targetPort: 8084

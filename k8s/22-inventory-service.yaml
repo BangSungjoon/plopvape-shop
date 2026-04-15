@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testbed-inventory
+  namespace: rca-testbed
+  labels:
+    app: testbed-inventory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testbed-inventory
+  template:
+    metadata:
+      labels:
+        app: testbed-inventory
+    spec:
+      containers:
+        - name: inventory-service
+          image: plopvape-inventory:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: service-config
+            - secretRef:
+                name: postgres-secret
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: testbed-inventory
+  namespace: rca-testbed
+spec:
+  selector:
+    app: testbed-inventory
+  ports:
+    - port: 8082
+      targetPort: 8082
