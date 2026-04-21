@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk AS builder
+FROM eclipse-temurin:17-jdk AS builder
 WORKDIR /build
 
 COPY pom.xml ./pom.xml
@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y maven && \
 COPY product-service/src ./product-service/src
 RUN mvn -pl product-service package -DskipTests -q
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=builder /build/product-service/target/*.jar app.jar
 RUN mkdir -p /opt/apm
