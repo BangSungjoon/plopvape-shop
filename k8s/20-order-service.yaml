@@ -109,7 +109,7 @@ spec:
               memory: 512Mi
             limits:
               cpu: 500m
-              memory: 768Mi
+              memory: 1Gi
 ---
 # ============================================================
 # Service (ClusterIP) — 클러스터 내부에서 이 이름으로 접근 가능
