@@ -82,18 +82,26 @@ spec:
               value: "10000"
 
           # --- 헬스체크 (Probe) ---
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            failureThreshold: 30
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8081
-            initialDelaySeconds: 60      # APM agent 로딩 대비 (기존 30)
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8081
-            initialDelaySeconds: 90      # APM agent 로딩 대비 (기존 60)
             periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 5
 
           # --- 리소스 제한 ---
           resources:

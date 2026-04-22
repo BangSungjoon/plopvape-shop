@@ -89,18 +89,27 @@ spec:
               value: "10000"
 
           # --- 헬스체크 (Probe) ---
+          # startupProbe가 부팅 완료까지 liveness/readiness를 억제 → 최대 150초 부팅 허용
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            failureThreshold: 30         # 5초 x 30 = 최대 150초 부팅 대기
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 60      # APM agent 로딩 대비 (기존 30)
             periodSeconds: 10
+            timeoutSeconds: 3            # 기본 1초는 타이트 → GC pause / DB 일시 지연 허용
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 90      # APM agent 로딩 대비 (기존 60)
             periodSeconds: 15
+            timeoutSeconds: 3            # 기본 1초 → 3초
+            failureThreshold: 5          # 기본 3 → 5 (15s x 5 = 75s 유예, 일시적 슬로우다운에 관대)
 
           # --- 리소스 제한 ---
           resources:
